@@ -8,7 +8,7 @@ using MattesAutoPerformance.Models;
 namespace MattesAutoPerformance.Services;
 
 /// <summary>
-/// Letar efter problem på datorn. Allt här är skrivskyddat; åtgärderna kommer i steg 3.
+/// Letar efter problem på datorn. Allt här är skrivskyddat; åtgärderna finns i <see cref="FixService"/>.
 /// </summary>
 public sealed class HealthCheckService
 {
@@ -91,7 +91,9 @@ public sealed class HealthCheckService
                 Status = HealthStatus.Problem,
                 Summary = $"{broken.Count} enhet(er) fungerar inte som de ska.",
                 Details = [.. broken, .. disabled],
-                FixHint = "Söka efter och installera om drivrutiner för enheterna.",
+                Fix = FixKind.RepairDrivers,
+                FixLabel = "Reparera drivrutiner",
+                FixHint = "Söker igenom enheterna igen och installerar drivrutiner från Windows Update.",
             };
         }
 
@@ -172,7 +174,9 @@ public sealed class HealthCheckService
                 Status = HealthStatus.Warning,
                 Summary = string.Join(" och ", parts) + " väntar på att installeras.",
                 Details = [.. drivers.Select(d => "Drivrutin: " + d), .. software],
-                FixHint = "Ladda ner och installera alla uppdateringar.",
+                Fix = FixKind.InstallUpdates,
+                FixLabel = "Installera uppdateringar",
+                FixHint = "Laddar ner och installerar alla uppdateringar.",
             };
         }
         finally
@@ -183,49 +187,15 @@ public sealed class HealthCheckService
 
     // ---- Autostart -----------------------------------------------------------------------
 
-    private const string RunKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
-    private const string Run32Key = @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run";
-    private const string ApprovedKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\";
-
     /// <summary>Över så här många påslagna autostartappar blir det en varning.</summary>
     private const int StartupWarningLimit = 8;
 
     private static HealthResult CheckStartupApps(string title, string icon)
     {
-        var enabled = new List<string>();
-        var disabledCount = 0;
+        var entries = StartupService.GetAll();
+        var enabled = entries.Where(e => e.Enabled).Select(e => e.Name).ToList();
+        var disabledCount = entries.Count - enabled.Count;
 
-        void Collect(RegistryKey root, string runKey, string approvedName)
-        {
-            using var run = root.OpenSubKey(runKey);
-            if (run is null) return;
-            using var approved = root.OpenSubKey(ApprovedKey + approvedName);
-            foreach (var name in run.GetValueNames().Where(n => n != ""))
-            {
-                if (IsApproved(approved, name)) enabled.Add(name);
-                else disabledCount++;
-            }
-        }
-
-        void CollectFolder(string folder, RegistryKey root)
-        {
-            if (!Directory.Exists(folder)) return;
-            using var approved = root.OpenSubKey(ApprovedKey + "StartupFolder");
-            foreach (var file in Directory.GetFiles(folder).Where(f => !f.EndsWith("desktop.ini", StringComparison.OrdinalIgnoreCase)))
-            {
-                var fileName = Path.GetFileName(file);
-                if (IsApproved(approved, fileName)) enabled.Add(Path.GetFileNameWithoutExtension(file));
-                else disabledCount++;
-            }
-        }
-
-        Collect(Registry.CurrentUser, RunKey, "Run");
-        Collect(Registry.LocalMachine, RunKey, "Run");
-        Collect(Registry.LocalMachine, Run32Key, "Run32");
-        CollectFolder(Environment.GetFolderPath(Environment.SpecialFolder.Startup), Registry.CurrentUser);
-        CollectFolder(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup), Registry.LocalMachine);
-
-        enabled.Sort(StringComparer.CurrentCultureIgnoreCase);
         var tooMany = enabled.Count > StartupWarningLimit;
         var summary = $"{enabled.Count} app(ar) startar automatiskt med Windows";
         summary += disabledCount > 0 ? $", {disabledCount} är redan avstängda." : ".";
@@ -238,32 +208,16 @@ public sealed class HealthCheckService
             Status = tooMany ? HealthStatus.Warning : HealthStatus.Ok,
             Summary = summary,
             Details = enabled,
-            FixHint = enabled.Count > 0 ? "Välja vilka appar som inte ska starta automatiskt." : null,
+            Fix = entries.Count > 0 ? FixKind.ManageStartup : null,
+            FixLabel = "Välj appar",
+            FixHint = "Välj själv vilka appar som ska starta med Windows. Det går att ändra tillbaka.",
         };
     }
-
-    /// <summary>
-    /// Aktivitetshanteraren sparar av/på i StartupApproved. Första byten är jämn när appen är påslagen
-    /// och udda när den är avstängd. Saknas värdet räknas appen som påslagen.
-    /// </summary>
-    private static bool IsApproved(RegistryKey? approved, string name) =>
-        approved?.GetValue(name) is not byte[] { Length: > 0 } data || data[0] % 2 == 0;
 
     // ---- Systemfiler ---------------------------------------------------------------------
 
     private static HealthResult CheckSystemFiles(string title, string icon)
     {
-        if (!Elevation.IsAdministrator)
-        {
-            return new HealthResult
-            {
-                Title = title,
-                Icon = icon,
-                Status = HealthStatus.Info,
-                Summary = "Kräver administratör. Starta om appen som administratör för att kontrollera systemfilerna.",
-            };
-        }
-
         // Repair-WindowsImage svarar med samma engelska ord oavsett vilket språk Windows har.
         var psi = new ProcessStartInfo("powershell.exe",
             "-NoProfile -NonInteractive -Command \"(Repair-WindowsImage -Online -CheckHealth).ImageHealthState\"")
@@ -285,6 +239,9 @@ public sealed class HealthCheckService
                 Icon = icon,
                 Status = HealthStatus.Ok,
                 Summary = "Windows systemavbildning är hel. Inga skadade systemfiler har hittats.",
+                Fix = FixKind.RepairSystemFiles,
+                FixLabel = "Kör SFC ändå",
+                FixHint = "Vill du vara extra säker kan du ändå köra en full kontroll med DISM och SFC.",
             },
             "Repairable" => new HealthResult
             {
@@ -292,7 +249,9 @@ public sealed class HealthCheckService
                 Icon = icon,
                 Status = HealthStatus.Problem,
                 Summary = "Windows har hittat skadade systemfiler som går att reparera.",
-                FixHint = "Reparera systemfilerna med DISM och SFC.",
+                Fix = FixKind.RepairSystemFiles,
+                FixLabel = "Reparera systemfiler",
+                FixHint = "Kör Windows egna reparationsverktyg DISM och SFC. Kan ta 10–30 minuter.",
             },
             "NonRepairable" => new HealthResult
             {
@@ -309,6 +268,9 @@ public sealed class HealthCheckService
                 Status = HealthStatus.Info,
                 Summary = "Kunde inte avgöra systemfilernas status.",
                 Details = output.Length > 0 ? [output] : [],
+                Fix = FixKind.RepairSystemFiles,
+                FixLabel = "Reparera systemfiler",
+                FixHint = "Kör Windows egna reparationsverktyg DISM och SFC. Kan ta 10–30 minuter.",
             },
         };
     }
@@ -360,7 +322,58 @@ public sealed class HealthCheckService
                 ? "Alla diskar mår bra och har gott om ledigt utrymme."
                 : "Något behöver ses över på dina diskar.",
             Details = [.. problems, .. warnings],
-            FixHint = warnings.Any(w => w.Contains("ledigt")) ? "Rensa tillfälliga filer för att frigöra utrymme." : null,
+        };
+    }
+
+    // ---- Tillfälliga filer ---------------------------------------------------------------
+
+    /// <summary>Över så här mycket tillfälliga filer blir det en varning.</summary>
+    private const long TempWarningBytes = 1L << 30;
+
+    private static HealthResult CheckTempFiles(string title, string icon)
+    {
+        var details = new List<string>();
+        long total = 0;
+        foreach (var folder in FixService.TempFolders)
+        {
+            var size = FixService.FolderSize(folder);
+            total += size;
+            details.Add($"{folder}: {Format.Bytes(size)}");
+        }
+
+        return new HealthResult
+        {
+            Title = title,
+            Icon = icon,
+            Status = total > TempWarningBytes ? HealthStatus.Warning : HealthStatus.Ok,
+            Summary = $"Tillfälliga filer tar upp {Format.Bytes(total)}.",
+            Details = details,
+            Fix = total > 0 ? FixKind.CleanTempFiles : null,
+            FixLabel = "Rensa",
+            FixHint = "Tar bort tillfälliga filer som är äldre än ett dygn. Papperskorgen och dina egna filer rörs inte.",
+        };
+    }
+
+    // ---- Energischema --------------------------------------------------------------------
+
+    private static HealthResult CheckPowerPlan(string title, string icon)
+    {
+        var (guid, name) = FixService.GetActivePowerPlan();
+        var fast = FixService.IsHighPerformancePlan(guid);
+        var onBattery = FixService.HasBattery();
+
+        return new HealthResult
+        {
+            Title = title,
+            Icon = icon,
+            Status = fast ? HealthStatus.Ok : HealthStatus.Info,
+            Summary = fast
+                ? $"Datorn använder energischemat \"{name}\" för bästa prestanda."
+                : $"Datorn använder energischemat \"{name}\". Med \"Hög prestanda\" arbetar processorn snabbare.",
+            Details = onBattery && !fast ? ["Datorn har ett batteri. Hög prestanda gör att batteriet tar slut fortare."] : [],
+            Fix = fast ? null : FixKind.HighPerformancePower,
+            FixLabel = "Byt till Hög prestanda",
+            FixHint = "Byter energischema. Du kan byta tillbaka under Energialternativ i Kontrollpanelen.",
         };
     }
 
@@ -389,6 +402,9 @@ public sealed class HealthCheckService
                 ? "Datorn behöver startas om för att slutföra uppdateringar."
                 : "Ingen omstart behövs.",
             Details = reasons,
+            Fix = reasons.Count > 0 ? FixKind.Restart : null,
+            FixLabel = "Starta om nu",
+            FixHint = "Sparar inget åt dig, så stäng dina program först.",
         };
     }
 }

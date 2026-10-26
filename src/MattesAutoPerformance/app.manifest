@@ -4,8 +4,8 @@
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
     <security>
       <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
-        <!-- Steg 1 läser bara information och behöver inte administratörsrättigheter. -->
-        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+        <!-- Åtgärderna (uppdateringar, SFC, återställningspunkt) kräver administratör. -->
+        <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
       </requestedPrivileges>
     </security>
   </trustInfo>

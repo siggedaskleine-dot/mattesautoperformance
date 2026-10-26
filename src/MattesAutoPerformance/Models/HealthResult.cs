@@ -23,12 +23,19 @@ public sealed class HealthResult
 
     public List<string> Details { get; init; } = new();
 
-    /// <summary>Vad som kommer att kunna fixas med ett klick i steg 3.</summary>
+    /// <summary>Beskrivning av vad knappen gör, t.ex. "Installera alla uppdateringar".</summary>
     public string? FixHint { get; init; }
+
+    public FixKind? Fix { get; init; }
+
+    /// <summary>Texten på knappen.</summary>
+    public string FixLabel { get; init; } = "Fixa";
+
+    public bool CanFix => Fix.HasValue;
 
     public bool HasDetails => Details.Count > 0;
 
-    public bool HasFixHint => !string.IsNullOrEmpty(FixHint);
+    public bool HasFixHint => CanFix && !string.IsNullOrEmpty(FixHint);
 
     public string StatusText => Status switch
     {

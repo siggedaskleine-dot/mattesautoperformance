@@ -5,6 +5,7 @@
         Title="Mattes AutoPerformance"
         Width="1280" Height="820" MinWidth="520" MinHeight="480"
         WindowStartupLocation="CenterScreen"
+        Icon="/app.ico"
         Background="{StaticResource BackgroundBrush}"
         Foreground="{StaticResource TextBrush}"
         FontFamily="Segoe UI Variable Text, Segoe UI"
@@ -104,12 +105,22 @@
                             </Border>
                         </Grid>
                         <TextBlock Text="{Binding Summary}" Margin="0,8,0,0" TextWrapping="Wrap" />
-                        <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{StaticResource AccentBrush}"
-                                   Visibility="{Binding HasFixHint, Converter={StaticResource BoolToVisibility}}">
-                            <Run Text="&#xE90F;" FontFamily="{StaticResource IconFont}" />
-                            <Run Text="Kan fixas med ett klick (kommer i nästa version):" />
-                            <Run Text="{Binding FixHint, Mode=OneWay}" />
-                        </TextBlock>
+                        <Grid Margin="0,10,0,0" Visibility="{Binding CanFix, Converter={StaticResource BoolToVisibility}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding FixHint}" TextWrapping="Wrap" VerticalAlignment="Center"
+                                       Foreground="{StaticResource MutedTextBrush}" Margin="0,0,16,0" />
+                            <Button Grid.Column="1" Style="{StaticResource AccentButton}" Padding="14,6"
+                                    Tag="{Binding}" Click="FixButton_Click"
+                                    IsEnabled="{Binding DataContext.CanRunFixes, RelativeSource={RelativeSource AncestorType=Window}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE90F;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding FixLabel}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
                         <Expander Margin="0,8,0,0" Foreground="{StaticResource MutedTextBrush}"
                                   Header="Visa detaljer"
                                   Visibility="{Binding HasDetails, Converter={StaticResource BoolToVisibility}}">
@@ -151,11 +162,29 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Sidhuvud -->
         <StackPanel Margin="32,24,32,16">
-            <TextBlock Text="Mattes AutoPerformance" FontSize="26" FontWeight="Bold" />
+            <Grid>
+                <TextBlock Text="Mattes AutoPerformance" FontSize="26" FontWeight="Bold" />
+                <!-- Live-mätare -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <StackPanel Width="140" Margin="0,0,20,0">
+                        <TextBlock x:Name="CpuText" Text="Processor –" FontSize="12"
+                                   Foreground="{StaticResource MutedTextBrush}" />
+                        <ProgressBar x:Name="CpuBar" Height="6" Margin="0,4,0,0" Maximum="100" BorderThickness="0"
+                                     Background="{StaticResource TrackBrush}" Foreground="{StaticResource AccentBrush}" />
+                    </StackPanel>
+                    <StackPanel Width="140">
+                        <TextBlock x:Name="RamText" Text="Minne –" FontSize="12"
+                                   Foreground="{StaticResource MutedTextBrush}" />
+                        <ProgressBar x:Name="RamBar" Height="6" Margin="0,4,0,0" Maximum="100" BorderThickness="0"
+                                     Background="{StaticResource TrackBrush}" Foreground="{StaticResource AccentBrush}" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
             <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
                 <RadioButton x:Name="OverviewTab" Content="Översikt" Style="{StaticResource TabButton}"
                              GroupName="Tabs" IsChecked="True" Checked="Tab_Checked" />
@@ -172,13 +201,21 @@
             </Grid.ColumnDefinitions>
             <TextBlock x:Name="StatusText" Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center"
                        Text="Läser in din hårdvara…" />
-            <Button x:Name="RefreshButton" Grid.Column="1" Style="{StaticResource AccentButton}"
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+            <Button Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Click="SaveReport_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE74E;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
+                    <TextBlock Text="Spara rapport" Margin="8,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <Button x:Name="RefreshButton" Style="{StaticResource AccentButton}"
                     Click="RefreshButton_Click">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
                     <TextBlock Text="Läs in igen" Margin="8,0,0,0" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
+            </StackPanel>
         </Grid>
 
         <!-- Verktygsrad för hälsokontrollen -->
@@ -190,18 +227,19 @@
             </Grid.ColumnDefinitions>
             <TextBlock x:Name="HealthStatusText" Foreground="{StaticResource MutedTextBrush}"
                        VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,16,0"
-                       Text="Letar efter drivrutinsfel, saknade uppdateringar, autostartappar och skadade systemfiler. Ingenting ändras på datorn." />
-            <Button x:Name="AdminButton" Grid.Column="1" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
-                    Click="AdminButton_Click" ToolTip="Behövs för att kontrollera systemfilerna">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="&#xE7EF;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
-                    <TextBlock Text="Starta som administratör" Margin="8,0,0,0" VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
-            <Button x:Name="ScanButton" Grid.Column="2" Style="{StaticResource AccentButton}" Click="ScanButton_Click">
+                       Text="Letar efter drivrutinsfel, saknade uppdateringar, autostartappar och skadade systemfiler. Skanningen ändrar ingenting." />
+            <Button x:Name="ScanButton" Grid.Column="1" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                    Click="ScanButton_Click" IsEnabled="{Binding CanRunFixes}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE721;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
                     <TextBlock Text="Starta skanning" Margin="8,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <Button x:Name="FixAllButton" Grid.Column="2" Style="{StaticResource AccentButton}" Click="FixAll_Click"
+                    IsEnabled="False" ToolTip="Installerar uppdateringar, reparerar drivrutiner och systemfiler och rensar tillfälliga filer">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE945;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
+                    <TextBlock Text="Fixa allt" Margin="8,0,0,0" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
         </Grid>
@@ -227,5 +265,21 @@
                 <ItemsControl x:Name="HealthResults" ItemTemplate="{StaticResource HealthTemplate}" />
             </StackPanel>
         </ScrollViewer>
+
+        <!-- Logg över vad åtgärderna gör -->
+        <Border x:Name="LogPanel" Grid.Row="3" Margin="32,0,32,24" Padding="16,12" CornerRadius="10"
+                Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}"
+                BorderThickness="1" Visibility="Collapsed">
+            <DockPanel>
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <TextBlock Text="Logg" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" />
+                    <TextBlock x:Name="LogBusy" Text="Arbetar… låt appen vara öppen" HorizontalAlignment="Right"
+                               Foreground="{StaticResource MediumBrush}" Visibility="Collapsed" />
+                </Grid>
+                <TextBox x:Name="LogBox" Height="170" IsReadOnly="True" TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto" BorderThickness="0" Background="Transparent"
+                         Foreground="{StaticResource TextBrush}" FontFamily="Cascadia Mono, Consolas" FontSize="12" />
+            </DockPanel>
+        </Border>
     </Grid>
 </Window>

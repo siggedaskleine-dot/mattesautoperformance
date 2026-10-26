@@ -1,13 +1,21 @@
 # Mattes AutoPerformance
 
-Ett Windows 11-program som visar en snygg överblick över datorns hårdvara och (i senare steg) hittar och fixar problem med ett klick.
+Ett Windows 11-program som visar en snygg överblick över datorns hårdvara, hittar saknade uppdateringar och andra fel, och fixar dem med ett klick.
 
-## Plan
+## Funktioner
 
-1. **Hårdvaruöversikt** ✅ – processor, grafikkort, RAM, moderkort/BIOS, lagring och nätverk.
-2. **Hälsokontroll** ✅ – letar efter drivrutinsfel, saknade uppdateringar, autostartappar och trasiga systemfiler.
-3. **Fixa med ett klick** – installerar uppdateringar, stänger av autostartappar, kör SFC/DISM. Skapar en återställningspunkt först.
-4. **Färdig exe-fil** – byggs automatiskt av GitHub.
+- **Översikt**: processor, grafikkort, RAM, moderkort/BIOS, lagring och nätverk, plus live-mätare för processor och minne.
+- **Hälsokontroll**: letar efter drivrutinsfel, saknade Windows- och drivrutinsuppdateringar, autostartappar, skadade systemfiler, diskproblem, tillfälliga filer, energischema och väntande omstart.
+- **Fixa med ett klick**: varje problem har en knapp, och **Fixa allt** kör alla säkra åtgärder i ett svep:
+  - installerar Windows- och drivrutinsuppdateringar
+  - söker igenom enheterna igen och hämtar saknade drivrutiner
+  - reparerar systemfiler med DISM och SFC
+  - rensar tillfälliga filer äldre än ett dygn
+- **Autostartappar**: slå av och på appar på samma sätt som Aktivitetshanteraren. Det går alltid att ångra.
+- **Energischema**: byt till Hög prestanda med ett klick.
+- **Spara rapport**: en textfil med all hårdvara och resultatet av hälsokontrollen.
+
+Innan uppdateringar eller reparationer körs skapar appen en återställningspunkt, så att du kan backa via Systemåterställning om något går fel.
 
 ## Ladda ner och köra
 
@@ -27,4 +35,4 @@ dotnet run --project src/MattesAutoPerformance
 
 ## Teknik
 
-C# och WPF på .NET 10. Hårdvaruinformationen läses via WMI (`System.Management`), registret och .NET:s nätverks- och diskklasser. Översikten och hälsokontrollen läser bara information och ändrar ingenting på datorn. Kontrollen av systemfiler kräver att appen körs som administratör (knappen "Starta som administratör").
+C# och WPF på .NET 10. Hårdvaruinformationen läses via WMI (`System.Management`), registret och .NET:s nätverks- och diskklasser. Appen kräver administratör (Windows frågar när den startar) eftersom åtgärderna ändrar systemet. Översikten och skanningen ändrar ingenting; bara knapparna gör det, och de frågar först.
