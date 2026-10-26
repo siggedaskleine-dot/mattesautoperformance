@@ -1,0 +1,118 @@
+<Window x:Class="MattesAutoPerformance.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:MattesAutoPerformance.Models"
+        Title="Mattes AutoPerformance"
+        Width="1280" Height="820" MinWidth="520" MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BackgroundBrush}"
+        Foreground="{StaticResource TextBrush}"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
+        FontSize="13">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+        <!-- En rad med etikett och värde, och en stapel när raden har en procentsats. -->
+        <DataTemplate x:Key="RowTemplate" DataType="{x:Type models:InfoRow}">
+            <StackPanel Margin="0,3">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="130" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Label}" Foreground="{StaticResource MutedTextBrush}"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+                </Grid>
+                <ProgressBar Height="6" Margin="0,5,0,2" Maximum="100" Value="{Binding Percent, Mode=OneWay}"
+                             Background="{StaticResource TrackBrush}" BorderThickness="0"
+                             Visibility="{Binding HasBar, Converter={StaticResource BoolToVisibility}}">
+                    <ProgressBar.Style>
+                        <Style TargetType="ProgressBar">
+                            <Setter Property="Foreground" Value="{StaticResource LowBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Level}" Value="Medium">
+                                    <Setter Property="Foreground" Value="{StaticResource MediumBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Level}" Value="High">
+                                    <Setter Property="Foreground" Value="{StaticResource HighBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ProgressBar.Style>
+                </ProgressBar>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- En delkomponent inuti ett kort, t.ex. en disk eller en RAM-modul. -->
+        <DataTemplate x:Key="SubItemTemplate" DataType="{x:Type models:HardwareSection}">
+            <Border Margin="0,8,0,0" Padding="12,8" CornerRadius="6" Background="#FF252932">
+                <StackPanel>
+                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Margin="0,0,0,4"
+                               TextTrimming="CharacterEllipsis" />
+                    <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource RowTemplate}" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- Ett kort i översikten. -->
+        <DataTemplate x:Key="CardTemplate" DataType="{x:Type models:HardwareSection}">
+            <Border Width="400" Margin="8" Padding="20,16" CornerRadius="10"
+                    Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}"
+                    BorderThickness="1">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Icon}" FontFamily="{StaticResource IconFont}" FontSize="18"
+                                   Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Title}" Margin="10,0,0,0" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding Headline}" Margin="0,10,0,10" FontSize="18" FontWeight="SemiBold"
+                               TextWrapping="Wrap" />
+                    <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource RowTemplate}" />
+                    <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource SubItemTemplate}"
+                                  Visibility="{Binding HasItems, Converter={StaticResource BoolToVisibility}}" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Sidhuvud -->
+        <Grid Margin="32,24,32,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Mattes AutoPerformance" FontSize="26" FontWeight="Bold" />
+                <TextBlock x:Name="StatusText" Margin="0,4,0,0" Foreground="{StaticResource MutedTextBrush}"
+                           Text="Läser in din hårdvara…" />
+            </StackPanel>
+            <Button x:Name="RefreshButton" Grid.Column="1" Style="{StaticResource AccentButton}"
+                    VerticalAlignment="Center" Click="RefreshButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
+                    <TextBlock Text="Läs in igen" Margin="8,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- Korten -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,0,24,24">
+            <ItemsControl x:Name="Sections" ItemTemplate="{StaticResource CardTemplate}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</Window>
