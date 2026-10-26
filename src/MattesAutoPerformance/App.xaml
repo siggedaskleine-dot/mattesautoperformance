@@ -46,6 +46,36 @@
                     </Setter.Value>
                 </Setter>
             </Style>
+            <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource AccentButton}">
+                <Setter Property="Background" Value="#FF2C303A" />
+            </Style>
+
+            <!-- Flikar överst i fönstret. -->
+            <Style x:Key="TabButton" TargetType="RadioButton">
+                <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Margin" Value="0,0,24,0" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RadioButton">
+                            <StackPanel Background="Transparent">
+                                <ContentPresenter Margin="0,0,0,6" />
+                                <Border x:Name="Underline" Height="3" CornerRadius="1.5" Background="Transparent" />
+                            </StackPanel>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                    <Setter TargetName="Underline" Property="Background" Value="{StaticResource AccentBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

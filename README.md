@@ -5,7 +5,7 @@ Ett Windows 11-program som visar en snygg överblick över datorns hårdvara och
 ## Plan
 
 1. **Hårdvaruöversikt** ✅ – processor, grafikkort, RAM, moderkort/BIOS, lagring och nätverk.
-2. **Hälsokontroll** – letar efter drivrutinsfel, saknade uppdateringar, autostartappar och trasiga systemfiler.
+2. **Hälsokontroll** ✅ – letar efter drivrutinsfel, saknade uppdateringar, autostartappar och trasiga systemfiler.
 3. **Fixa med ett klick** – installerar uppdateringar, stänger av autostartappar, kör SFC/DISM. Skapar en återställningspunkt först.
 4. **Färdig exe-fil** – byggs automatiskt av GitHub.
 
@@ -27,4 +27,4 @@ dotnet run --project src/MattesAutoPerformance
 
 ## Teknik
 
-C# och WPF på .NET 10. Hårdvaruinformationen läses via WMI (`System.Management`), registret och .NET:s nätverks- och diskklasser. Steg 1 läser bara information och ändrar ingenting på datorn.
+C# och WPF på .NET 10. Hårdvaruinformationen läses via WMI (`System.Management`), registret och .NET:s nätverks- och diskklasser. Översikten och hälsokontrollen läser bara information och ändrar ingenting på datorn. Kontrollen av systemfiler kräver att appen körs som administratör (knappen "Starta som administratör").

@@ -76,27 +76,104 @@
                 </StackPanel>
             </Border>
         </DataTemplate>
+        <!-- Ett resultat i hälsokontrollen. -->
+        <DataTemplate x:Key="HealthTemplate" DataType="{x:Type models:HealthResult}">
+            <Border Margin="8" CornerRadius="10" Background="{StaticResource CardBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="5" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border x:Name="StatusBar" CornerRadius="10,0,0,10" Background="{StaticResource TrackBrush}" />
+                    <StackPanel Grid.Column="1" Margin="20,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Icon}" FontFamily="{StaticResource IconFont}" FontSize="18"
+                                       Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="10,0" FontSize="16"
+                                       FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" />
+                            <Border x:Name="Pill" Grid.Column="2" CornerRadius="10" Padding="10,3"
+                                    Background="{StaticResource TrackBrush}" VerticalAlignment="Center">
+                                <TextBlock x:Name="PillText" Text="{Binding StatusText}" FontSize="12"
+                                           FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" />
+                            </Border>
+                        </Grid>
+                        <TextBlock Text="{Binding Summary}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                        <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{StaticResource AccentBrush}"
+                                   Visibility="{Binding HasFixHint, Converter={StaticResource BoolToVisibility}}">
+                            <Run Text="&#xE90F;" FontFamily="{StaticResource IconFont}" />
+                            <Run Text="Kan fixas med ett klick (kommer i nästa version):" />
+                            <Run Text="{Binding FixHint, Mode=OneWay}" />
+                        </TextBlock>
+                        <Expander Margin="0,8,0,0" Foreground="{StaticResource MutedTextBrush}"
+                                  Header="Visa detaljer"
+                                  Visibility="{Binding HasDetails, Converter={StaticResource BoolToVisibility}}">
+                            <ItemsControl ItemsSource="{Binding Details}" Margin="24,6,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding StringFormat='• {0}'}" Margin="0,2"
+                                                   TextWrapping="Wrap" Foreground="{StaticResource TextBrush}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Expander>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="Ok">
+                    <Setter TargetName="StatusBar" Property="Background" Value="{StaticResource LowBrush}" />
+                    <Setter TargetName="PillText" Property="Foreground" Value="{StaticResource LowBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Info">
+                    <Setter TargetName="StatusBar" Property="Background" Value="{StaticResource AccentBrush}" />
+                    <Setter TargetName="PillText" Property="Foreground" Value="{StaticResource AccentBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Warning">
+                    <Setter TargetName="StatusBar" Property="Background" Value="{StaticResource MediumBrush}" />
+                    <Setter TargetName="PillText" Property="Foreground" Value="{StaticResource MediumBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Problem">
+                    <Setter TargetName="StatusBar" Property="Background" Value="{StaticResource HighBrush}" />
+                    <Setter TargetName="PillText" Property="Foreground" Value="{StaticResource HighBrush}" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <!-- Sidhuvud -->
-        <Grid Margin="32,24,32,8">
+        <StackPanel Margin="32,24,32,16">
+            <TextBlock Text="Mattes AutoPerformance" FontSize="26" FontWeight="Bold" />
+            <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                <RadioButton x:Name="OverviewTab" Content="Översikt" Style="{StaticResource TabButton}"
+                             GroupName="Tabs" IsChecked="True" Checked="Tab_Checked" />
+                <RadioButton x:Name="HealthTab" Content="Hälsokontroll" Style="{StaticResource TabButton}"
+                             GroupName="Tabs" Checked="Tab_Checked" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Verktygsrad för översikten -->
+        <Grid x:Name="OverviewToolbar" Grid.Row="1" Margin="32,0,32,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <StackPanel>
-                <TextBlock Text="Mattes AutoPerformance" FontSize="26" FontWeight="Bold" />
-                <TextBlock x:Name="StatusText" Margin="0,4,0,0" Foreground="{StaticResource MutedTextBrush}"
-                           Text="Läser in din hårdvara…" />
-            </StackPanel>
+            <TextBlock x:Name="StatusText" Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center"
+                       Text="Läser in din hårdvara…" />
             <Button x:Name="RefreshButton" Grid.Column="1" Style="{StaticResource AccentButton}"
-                    VerticalAlignment="Center" Click="RefreshButton_Click">
+                    Click="RefreshButton_Click">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
                     <TextBlock Text="Läs in igen" Margin="8,0,0,0" VerticalAlignment="Center" />
@@ -104,8 +181,33 @@
             </Button>
         </Grid>
 
-        <!-- Korten -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,0,24,24">
+        <!-- Verktygsrad för hälsokontrollen -->
+        <Grid x:Name="HealthToolbar" Grid.Row="1" Margin="32,0,32,8" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="HealthStatusText" Foreground="{StaticResource MutedTextBrush}"
+                       VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,16,0"
+                       Text="Letar efter drivrutinsfel, saknade uppdateringar, autostartappar och skadade systemfiler. Ingenting ändras på datorn." />
+            <Button x:Name="AdminButton" Grid.Column="1" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                    Click="AdminButton_Click" ToolTip="Behövs för att kontrollera systemfilerna">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE7EF;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
+                    <TextBlock Text="Starta som administratör" Margin="8,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <Button x:Name="ScanButton" Grid.Column="2" Style="{StaticResource AccentButton}" Click="ScanButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE721;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
+                    <TextBlock Text="Starta skanning" Margin="8,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- Översikten -->
+        <ScrollViewer x:Name="OverviewPage" Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="24,0,24,24">
             <ItemsControl x:Name="Sections" ItemTemplate="{StaticResource CardTemplate}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -113,6 +215,17 @@
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
             </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Hälsokontrollen -->
+        <ScrollViewer x:Name="HealthPage" Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="24,0,24,24"
+                      Visibility="Collapsed">
+            <StackPanel MaxWidth="1000" HorizontalAlignment="Left">
+                <TextBlock x:Name="HealthPlaceholder" Margin="8,24" FontSize="15"
+                           Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"
+                           Text="Tryck på Starta skanning för att kontrollera datorn. Sökningen efter uppdateringar kan ta en minut." />
+                <ItemsControl x:Name="HealthResults" ItemTemplate="{StaticResource HealthTemplate}" />
+            </StackPanel>
         </ScrollViewer>
     </Grid>
 </Window>
