@@ -1,0 +1,285 @@
+<Window x:Class="MattesAutoPerformance.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:MattesAutoPerformance.Models"
+        Title="Mattes AutoPerformance"
+        Width="1280" Height="820" MinWidth="520" MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        Icon="/app.ico"
+        Background="{StaticResource BackgroundBrush}"
+        Foreground="{StaticResource TextBrush}"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
+        FontSize="13">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+        <!-- En rad med etikett och värde, och en stapel när raden har en procentsats. -->
+        <DataTemplate x:Key="RowTemplate" DataType="{x:Type models:InfoRow}">
+            <StackPanel Margin="0,3">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="130" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Label}" Foreground="{StaticResource MutedTextBrush}"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+                </Grid>
+                <ProgressBar Height="6" Margin="0,5,0,2" Maximum="100" Value="{Binding Percent, Mode=OneWay}"
+                             Background="{StaticResource TrackBrush}" BorderThickness="0"
+                             Visibility="{Binding HasBar, Converter={StaticResource BoolToVisibility}}">
+                    <ProgressBar.Style>
+                        <Style TargetType="ProgressBar">
+                            <Setter Property="Foreground" Value="{StaticResource LowBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Level}" Value="Medium">
+                                    <Setter Property="Foreground" Value="{StaticResource MediumBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Level}" Value="High">
+                                    <Setter Property="Foreground" Value="{StaticResource HighBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ProgressBar.Style>
+                </ProgressBar>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- En delkomponent inuti ett kort, t.ex. en disk eller en RAM-modul. -->
+        <DataTemplate x:Key="SubItemTemplate" DataType="{x:Type models:HardwareSection}">
+            <Border Margin="0,8,0,0" Padding="12,8" CornerRadius="6" Background="#FF252932">
+                <StackPanel>
+                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Margin="0,0,0,4"
+                               TextTrimming="CharacterEllipsis" />
+                    <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource RowTemplate}" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- Ett kort i översikten. -->
+        <DataTemplate x:Key="CardTemplate" DataType="{x:Type models:HardwareSection}">
+            <Border Width="400" Margin="8" Padding="20,16" CornerRadius="10"
+                    Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}"
+                    BorderThickness="1">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Icon}" FontFamily="{StaticResource IconFont}" FontSize="18"
+                                   Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Title}" Margin="10,0,0,0" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding Headline}" Margin="0,10,0,10" FontSize="18" FontWeight="SemiBold"
+                               TextWrapping="Wrap" />
+                    <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource RowTemplate}" />
+                    <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource SubItemTemplate}"
+                                  Visibility="{Binding HasItems, Converter={StaticResource BoolToVisibility}}" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <!-- Ett resultat i hälsokontrollen. -->
+        <DataTemplate x:Key="HealthTemplate" DataType="{x:Type models:HealthResult}">
+            <Border Margin="8" CornerRadius="10" Background="{StaticResource CardBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="5" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border x:Name="StatusBar" CornerRadius="10,0,0,10" Background="{StaticResource TrackBrush}" />
+                    <StackPanel Grid.Column="1" Margin="20,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Icon}" FontFamily="{StaticResource IconFont}" FontSize="18"
+                                       Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="10,0" FontSize="16"
+                                       FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" />
+                            <Border x:Name="Pill" Grid.Column="2" CornerRadius="10" Padding="10,3"
+                                    Background="{StaticResource TrackBrush}" VerticalAlignment="Center">
+                                <TextBlock x:Name="PillText" Text="{Binding StatusText}" FontSize="12"
+                                           FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" />
+                            </Border>
+                        </Grid>
+                        <TextBlock Text="{Binding Summary}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                        <Grid Margin="0,10,0,0" Visibility="{Binding CanFix, Converter={StaticResource BoolToVisibility}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding FixHint}" TextWrapping="Wrap" VerticalAlignment="Center"
+                                       Foreground="{StaticResource MutedTextBrush}" Margin="0,0,16,0" />
+                            <Button Grid.Column="1" Style="{StaticResource AccentButton}" Padding="14,6"
+                                    Tag="{Binding}" Click="FixButton_Click"
+                                    IsEnabled="{Binding DataContext.CanRunFixes, RelativeSource={RelativeSource AncestorType=Window}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE90F;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding FixLabel}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <Expander Margin="0,8,0,0" Foreground="{StaticResource MutedTextBrush}"
+                                  Header="Visa detaljer"
+                                  Visibility="{Binding HasDetails, Converter={StaticResource BoolToVisibility}}">
+                            <ItemsControl ItemsSource="{Binding Details}" Margin="24,6,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding StringFormat='• {0}'}" Margin="0,2"
+                                                   TextWrapping="Wrap" Foreground="{StaticResource TextBrush}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Expander>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="Ok">
+                    <Setter TargetName="StatusBar" Property="Background" Value="{StaticResource LowBrush}" />
+                    <Setter TargetName="PillText" Property="Foreground" Value="{StaticResource LowBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Info">
+                    <Setter TargetName="StatusBar" Property="Background" Value="{StaticResource AccentBrush}" />
+                    <Setter TargetName="PillText" Property="Foreground" Value="{StaticResource AccentBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Warning">
+                    <Setter TargetName="StatusBar" Property="Background" Value="{StaticResource MediumBrush}" />
+                    <Setter TargetName="PillText" Property="Foreground" Value="{StaticResource MediumBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Problem">
+                    <Setter TargetName="StatusBar" Property="Background" Value="{StaticResource HighBrush}" />
+                    <Setter TargetName="PillText" Property="Foreground" Value="{StaticResource HighBrush}" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Sidhuvud -->
+        <StackPanel Margin="32,24,32,16">
+            <Grid>
+                <TextBlock Text="Mattes AutoPerformance" FontSize="26" FontWeight="Bold" />
+                <!-- Live-mätare -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <StackPanel Width="140" Margin="0,0,20,0">
+                        <TextBlock x:Name="CpuText" Text="Processor –" FontSize="12"
+                                   Foreground="{StaticResource MutedTextBrush}" />
+                        <ProgressBar x:Name="CpuBar" Height="6" Margin="0,4,0,0" Maximum="100" BorderThickness="0"
+                                     Background="{StaticResource TrackBrush}" Foreground="{StaticResource AccentBrush}" />
+                    </StackPanel>
+                    <StackPanel Width="140">
+                        <TextBlock x:Name="RamText" Text="Minne –" FontSize="12"
+                                   Foreground="{StaticResource MutedTextBrush}" />
+                        <ProgressBar x:Name="RamBar" Height="6" Margin="0,4,0,0" Maximum="100" BorderThickness="0"
+                                     Background="{StaticResource TrackBrush}" Foreground="{StaticResource AccentBrush}" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+            <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                <RadioButton x:Name="OverviewTab" Content="Översikt" Style="{StaticResource TabButton}"
+                             GroupName="Tabs" IsChecked="True" Checked="Tab_Checked" />
+                <RadioButton x:Name="HealthTab" Content="Hälsokontroll" Style="{StaticResource TabButton}"
+                             GroupName="Tabs" Checked="Tab_Checked" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Verktygsrad för översikten -->
+        <Grid x:Name="OverviewToolbar" Grid.Row="1" Margin="32,0,32,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="StatusText" Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center"
+                       Text="Läser in din hårdvara…" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+            <Button Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Click="SaveReport_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE74E;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
+                    <TextBlock Text="Spara rapport" Margin="8,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <Button x:Name="RefreshButton" Style="{StaticResource AccentButton}"
+                    Click="RefreshButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
+                    <TextBlock Text="Läs in igen" Margin="8,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Verktygsrad för hälsokontrollen -->
+        <Grid x:Name="HealthToolbar" Grid.Row="1" Margin="32,0,32,8" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="HealthStatusText" Foreground="{StaticResource MutedTextBrush}"
+                       VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,16,0"
+                       Text="Letar efter drivrutinsfel, saknade uppdateringar, autostartappar och skadade systemfiler. Skanningen ändrar ingenting." />
+            <Button x:Name="ScanButton" Grid.Column="1" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                    Click="ScanButton_Click" IsEnabled="{Binding CanRunFixes}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE721;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
+                    <TextBlock Text="Starta skanning" Margin="8,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <Button x:Name="FixAllButton" Grid.Column="2" Style="{StaticResource AccentButton}" Click="FixAll_Click"
+                    IsEnabled="False" ToolTip="Installerar uppdateringar, reparerar drivrutiner och systemfiler och rensar tillfälliga filer">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE945;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" />
+                    <TextBlock Text="Fixa allt" Margin="8,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- Översikten -->
+        <ScrollViewer x:Name="OverviewPage" Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="24,0,24,24">
+            <ItemsControl x:Name="Sections" ItemTemplate="{StaticResource CardTemplate}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Hälsokontrollen -->
+        <ScrollViewer x:Name="HealthPage" Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="24,0,24,24"
+                      Visibility="Collapsed">
+            <StackPanel MaxWidth="1000" HorizontalAlignment="Left">
+                <TextBlock x:Name="HealthPlaceholder" Margin="8,24" FontSize="15"
+                           Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"
+                           Text="Tryck på Starta skanning för att kontrollera datorn. Sökningen efter uppdateringar kan ta en minut." />
+                <ItemsControl x:Name="HealthResults" ItemTemplate="{StaticResource HealthTemplate}" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Logg över vad åtgärderna gör -->
+        <Border x:Name="LogPanel" Grid.Row="3" Margin="32,0,32,24" Padding="16,12" CornerRadius="10"
+                Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}"
+                BorderThickness="1" Visibility="Collapsed">
+            <DockPanel>
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <TextBlock Text="Logg" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" />
+                    <TextBlock x:Name="LogBusy" Text="Arbetar… låt appen vara öppen" HorizontalAlignment="Right"
+                               Foreground="{StaticResource MediumBrush}" Visibility="Collapsed" />
+                </Grid>
+                <TextBox x:Name="LogBox" Height="170" IsReadOnly="True" TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto" BorderThickness="0" Background="Transparent"
+                         Foreground="{StaticResource TextBrush}" FontFamily="Cascadia Mono, Consolas" FontSize="12" />
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>
